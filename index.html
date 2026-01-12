@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCC Fahrplan - Bahnhofstafel</title>
+    <meta name="author" content="Based on c3-fahrplan-druck by Anton P. Braun and Felix Divo">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <noscript>JavaScript is required to render the schedule. Please enable it and reload.</noscript>
+
+    <!-- Title Bar -->
+    <div class="titleBar">
+        <div class="titleBarLeft">
+            <span id="currentTime"></span>
+        </div>
+        <div class="titleBarRight">
+            <span style="font-size: 24px;">&lt;&lt;39C3</span>
+        </div>
+        <div class="titleBarCenter">
+            <span class="eventType">Abfahrt</span>
+            <span class="stationName">Chaos Communication Congress</span>
+        </div>
+        <div class="titleBarClear"></div>
+    </div>
+
+    <!-- Departure Table -->
+    <table id="departureTable">
+        <thead>
+            <tr>
+                <th class="column_time">
+                    <span class="firstLanguage">Zeit</span><br>
+                    <span class="additionalLanguage">Time</span>
+                </th>
+                <th class="column_to_from">
+                    <span class="firstLanguage">Nach</span><br>
+                    <span class="additionalLanguage">Destination</span>
+                </th>
+                <th class="column_via">
+                    <span class="firstLanguage">Sprecher / Raum</span><br>
+                    <span class="additionalLanguage">Speaker / Room</span>
+                </th>
+                <th class="column_track">
+                    <span class="firstLanguage">Gleis</span><br>
+                    <span class="additionalLanguage">Platform</span>
+                </th>
+            </tr>
+        </thead>
+        <tbody id="departures">
+            <tr>
+                <td class="cell_time" colspan="4">Lade Fahrplan...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div id="additionalTextContainer">
+        <div class="additionalText" id="footerText">
+            Chaos Communication Congress - 27.12.2025 bis 30.12.2025
+        </div>
+    </div>
+
+    <script>
+        (async () => {
+            // Event-specific configuration
+            const scheduleUrl = 'https://api.events.ccc.de/congress/2025/schedule.json';
+            const trackMap = {
+                'Art & Beauty': 'ART',
+                'CCC & Community': 'CCC',
+                'Entertainment': 'FUN',
+                'Ethics, Society & Politics': 'ESP',
+                'Hardware': 'HARD',
+                'Science': 'SCI',
+                'Security': 'SEC',
+                'DJ-Set': 'DJ',
+                'Live Performance': 'LP',
+                null: 'NAT',
+                undefined: 'NAT',
+            };
+
+            // Room abbreviations
+            const roomAbbrevMap = {
+                'One': '1',
+                'Fuse': 'F',
+                'Ground': 'G',
+                'Zero': 'Z',
+                'SoS Saal 6': '6',
+                'House of Tea': 'HoT',
+                'Chaos Computer Music Club': 'CCMC',
+                'Chill Floor': 'CF',
+                'Komonin': 'KOM'
+            };
+            const roomAbbrevPartial = {
+                'Stonewall IO': 'SIO',
+                'Hardware Hacking Area': 'HHA',
+                'Bits&Bäume': 'B&B',
+                'Sendezentrum': 'SZ'
+            };
+
+            // URL parameter parsing
+            const params = new URLSearchParams(location.search);
+            const onlyDayParam = params.get('only-day');
+            const onlyTrackParam = params.get('only-track');
+            const onlyRoomParam = params.get('only-room');
+            const isSingleDay = onlyDayParam !== null;
+            const selectedDay = parseInt(onlyDayParam ?? '1', 10);
+
+            // DOM hooks
+            const departuresBody = document.getElementById('departures');
+            const currentTimeEl = document.getElementById('currentTime');
+            const footerText = document.getElementById('footerText');
+
+            // Update clock
+            const updateClock = () => {
+                const now = new Date();
+                currentTimeEl.textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+            };
+            updateClock();
+            setInterval(updateClock, 1000);
+
+            // Filter predicates
+            const trackTarget = onlyTrackParam?.toLowerCase();
+            const roomTarget = onlyRoomParam?.toLowerCase();
+            const passesFilters = (talk, roomName) => {
+                if (trackTarget) {
+                    const trackRaw = (talk.track || '').toString().toLowerCase();
+                    const trackCode = (trackMap[talk.track] || '').toLowerCase();
+                    if (trackRaw !== trackTarget && trackCode !== trackTarget) return false;
+                }
+                if (roomTarget && !roomName.toLowerCase().match(new RegExp(roomTarget))) return false;
+                return true;
+            };
+
+            const showError = (msg) => {
+                departuresBody.innerHTML = `<tr><td class="cell_time" colspan="4">${msg}</td></tr>`;
+            };
+
+            // Fetch schedule data
+            let data;
+            try {
+                const res = await fetch(scheduleUrl);
+                data = await res.json();
+            } catch (e) {
+                showError('Daten konnten nicht geladen werden. Bitte Verbindung prüfen.');
+                return;
+            }
+
+            const toMinutes = (hhmm) => parseInt(hhmm.slice(0, 2), 10) * 60 + parseInt(hhmm.slice(-2), 10);
+            const toHours = (mins) => `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+            const timeForSort = (hhmm) => {
+                const mins = toMinutes(hhmm);
+                return mins < 360 ? mins + (24 * 60) : mins;
+            };
+
+            const abbreviateRoom = (roomName) => {
+                if (roomAbbrevMap[roomName]) return roomAbbrevMap[roomName];
+                for (const [key, val] of Object.entries(roomAbbrevPartial)) {
+                    if (roomName.includes(key)) return val;
+                }
+                if (/^SoS (Stage|Lecture|Workshop) /.test(roomName)) return roomName.split(' ').pop();
+                if (roomName.startsWith('Kidspace')) return 'KID';
+                return roomName.substring(0, 4);
+            };
+
+            // Random delay generator (for fun!)
+            const getRandomDelay = () => {
+                if (Math.random() > 0.30) return ''; // ~30% chance of delay (every 3rd-4th entry)
+                const delays = [5, 10, 15, 20, 25, 30, 45, 60];
+                const delay = delays[Math.floor(Math.random() * delays.length)];
+                return `<span class="tripMessage">ca. ${delay} Minuten später</span>`;
+            };
+
+            // Render one departure row
+            const renderRow = (talk) => {
+                const trackCode = trackMap[talk.track] || 'NAT';
+                const trainId = talk.id.toString().substring(0, 5);
+                const speaker = (talk.persons || []).map(p => p.name).join(', ') || '';
+                const roomAbbrev = abbreviateRoom(talk.roomName);
+                const duration = toMinutes(talk.duration);
+                const endTime = toHours(toMinutes(talk.start) + duration);
+                const delayMsg = getRandomDelay();
+
+                return `
+                <tr>
+                    <td class="cell_time">
+                        <span class="time">${talk.start}</span>
+                        <span class="tripID">${trackCode} ${trainId}</span>
+                    </td>
+                    <td>
+                        <span class="to_from"><a href="${talk.url}" target="_blank">${talk.title}</a></span>
+                        ${delayMsg}
+                    </td>
+                    <td>
+                        <span class="path">${speaker}</span>
+                        <span class="tripMessage">${talk.roomName} | bis ${endTime}</span>
+                    </td>
+                    <td>
+                        <span class="platform">${roomAbbrev}</span>
+                    </td>
+                </tr>`;
+            };
+
+            // Render day header row
+            const renderDayHeader = (dayIndex, date) => {
+                const [year, month, day] = (date || '').split('-');
+                const dateStr = date ? `${day}.${month}.${year}` : '';
+                return `
+                <tr>
+                    <td class="cell_time" colspan="4" style="background-color: #FFFF00; color: #000000; font-weight: bold; font-size: 24px;">
+                        Tag ${dayIndex} - ${dateStr}
+                    </td>
+                </tr>`;
+            };
+
+            // Collect and sort talks
+            const collectAndSortTalks = (days, includeDay = true) => {
+                const talks = [];
+                days.forEach((day) => {
+                    Object.entries(day.rooms).forEach(([roomName, roomTalks]) => {
+                        roomTalks.forEach((talk) => {
+                            if (passesFilters(talk, roomName)) {
+                                talks.push({ ...talk, dayIndex: day.index, dayDate: day.date, roomName });
+                            }
+                        });
+                    });
+                });
+                talks.sort((a, b) => {
+                    if (includeDay && a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
+                    const aTime = timeForSort(a.start);
+                    const bTime = timeForSort(b.start);
+                    if (aTime !== bTime) return aTime - bTime;
+                    return a.roomName.localeCompare(b.roomName);
+                });
+                return talks;
+            };
+
+            // Render schedule
+            const days = data.schedule.conference.days;
+            let targetDays = days;
+
+            if (isSingleDay) {
+                const dayObj = days.find((d) => d.index === selectedDay);
+                if (!dayObj) {
+                    showError(`Keine Inhalte für Tag ${selectedDay} gefunden.`);
+                    return;
+                }
+                targetDays = [dayObj];
+                const [year, month, day] = (dayObj.date || '').split('-');
+                footerText.textContent = `Tag ${selectedDay} - ${day}.${month}.${year}`;
+            }
+
+            const allTalks = collectAndSortTalks(targetDays, !isSingleDay);
+
+            if (!allTalks.length) {
+                showError('Keine Fahrten gefunden.');
+                return;
+            }
+
+            departuresBody.innerHTML = '';
+            let currentDay = null;
+
+            allTalks.forEach((talk) => {
+                if (!isSingleDay && currentDay !== talk.dayIndex) {
+                    currentDay = talk.dayIndex;
+                    departuresBody.insertAdjacentHTML('beforeend', renderDayHeader(talk.dayIndex, talk.dayDate));
+                }
+                departuresBody.insertAdjacentHTML('beforeend', renderRow(talk));
+            });
+
+            // Animate long titles with marquee effect
+            const scrollSpeed = 50; // pixels per second
+            document.querySelectorAll('.to_from').forEach((el) => {
+                const container = el.closest('td');
+                if (!container) return;
+
+                const link = el.querySelector('a');
+                if (!link) return;
+
+                const text = link.textContent;
+                const containerWidth = container.offsetWidth;
+
+                // Create temp span to measure text width
+                const tempSpan = document.createElement('span');
+                tempSpan.style.cssText = 'visibility:hidden;position:absolute;white-space:nowrap;font-size:26px;font-weight:bold;';
+                tempSpan.textContent = text;
+                document.body.appendChild(tempSpan);
+                const textWidth = tempSpan.offsetWidth;
+                document.body.removeChild(tempSpan);
+
+                if (textWidth > containerWidth) {
+                    const separator = '\u00A0\u00A0+++\u00A0\u00A0';
+                    const fullWidth = textWidth + 60; // approximate separator width
+                    const duration = (fullWidth / scrollSpeed) * 1000; // ms
+
+                    link.innerHTML = `<span class="marquee-wrapper animate" style="--scroll-duration:${duration}ms">${text}${separator}${text}${separator}</span>`;
+                }
+            });
+
+        })();
+    </script>
+</body>
+</html>

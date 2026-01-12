@@ -1,0 +1,243 @@
+/* CCC Fahrplan Bahnhofstafel-Style CSS - Chaos Computer Congress schedule in train station departure board styling */
+
+/*#000080 navy blue*/
+/*#FFFF00 yellow*/
+/*#FFFFFF white*/
+/*reseting browser specific values*/
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, font, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
+    background: none repeat scroll 0 0 transparent;
+    border: 0 none;
+    font-size: 100%;
+    margin: 0;
+    outline: 0 none;
+    padding: 0;
+    vertical-align: baseline;
+}
+ol, ul {
+    list-style: none outside none;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after, q:before, q:after {
+    content: none;
+}
+:focus {
+    outline: 0 none;
+}
+ins {
+    text-decoration: none;
+}
+del {
+    text-decoration: line-through;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+/*end reseting browser specific values*/
+
+body {
+    background-color: #000080;
+    color: #000000;
+    font-family: "OfficerSans", "Arial", sans-serif;  /* CCC Fahrplan display font */
+    width: 100%;
+}
+.titleBar { /* Eigenschaften für die Titelleisten allgemein */
+    background-color: #000080;
+    font-size: 42px;
+    font-weight: bold;
+    overflow: hidden;
+    text-align: left;
+    width: 100%;
+    color: #FFFFFF;
+    line-height: 1.1;
+    padding: 4px 0;
+}
+.titleBar .eventType {
+    margin-right: 15px;
+}
+.titleBar .stationName {
+    font-weight: normal;
+}
+.titleBar * {
+    margin: 0 5px;
+}
+
+.titleBarLeft { /* Bereich links in der Titelleist (aktuell mit der Uhrzeit belegt)*/
+	float : left;
+	width : 80px;
+	text-align: left;
+}
+
+.titleBarRight { /* Bereich rechts in der Titelleist (aktuell mit den Logos belegt)*/
+	float : right;
+	height : 100%;
+}
+
+.logo { /* Eigenschaften für Logos */
+	height: 40px;
+    margin: 5px;
+}
+
+.titleBarCenter { /* mittlerer Bereich in der Titelleist (aktuell mit der Überschrift belegt)*/
+	margin: 0 100px 0 90px;
+	text-align: center;
+}
+
+.titleBarClear {
+	clear: both;
+}
+
+table {
+    clear: both;
+    table-layout: fixed;
+    text-align: left;
+    width: 100%;
+}
+table * th, table * td {
+    padding: 7px; /* Abstand des Inhalts der Tabellenzellen zum Zellenrand*/
+    border-bottom: 3px solid #000080;
+
+}
+thead th {
+    background-color: #FFFF00;
+    overflow: hidden;
+}
+thead th .firstLanguage { /* Eigenschaften des Spaltenkopfs für die Hauptsprache */
+    display: block;
+    font-size: 32px;
+    font-weight: bold;
+    line-height: 0.8;
+    margin-bottom: -8px;
+}
+thead th .additionalLanguage { /* Eigenschaften des Spaltenkopfs für die Nebensprache */
+    font-size: 21px;
+    font-style: italic;
+    font-weight: normal;
+    line-height: 1;
+}
+tbody tr td { /* Eigenschaften der Zellen für die Spalten Nach Über und Gleis */
+    background-color: #000080;
+    border-bottom: 1px solid #000080;
+    color: #FFFFFF;
+    overflow: hidden;
+}
+.column_time { /* Eigenschaften für die Spalte Zeit */
+    width: 115px;
+    padding-left: 8px !important;
+}
+.cell_time { /* Eigenschaften für eine Zelle in der Spalte Zeit */
+    background-color: #FFFFFF;
+    color: #000080;
+    text-align: left;
+}
+.time, .tripID {
+    display: block;
+}
+.time { /* Eigenschaften für eine die Zeit in einer Zelle in der Spalte Zeit */
+    font-size: 32px;
+}
+.tripID { /* Eigenschaften für eine die Zugnummer in einer Zelle in der Spalte Zeit */
+    font-size: 18px;
+}
+.column_via { /* Eigenschaften für eine die Spalte Über */
+    width: 20%;
+}
+.column_via .firstLanguage,
+.column_via .additionalLanguage {
+    white-space: nowrap;
+}
+.path { /* Eigenschaften für den Laufweg in der Spalte Über */
+    font-size: 21px;
+}
+.imgflughafen { /* Eigenschaften für Grafik im Laufweg */
+	width: 21px;
+	height: 21px;
+}
+.imgstadion { /* Eigenschaften für Grafik im Laufweg */
+	width: 25px;
+	height: 16px;
+}
+.to_from { /* Eigenschaften für die Zelle in der Spalte Von / Nach */
+    font-size: 26px;
+    font-weight: bold;
+}
+.to_from a {
+    color: inherit;
+    text-decoration: none;
+}
+.to_from .marquee-wrapper {
+    display: inline-block;
+    position: relative;
+    white-space: nowrap;
+}
+.to_from .marquee-wrapper.animate {
+    animation: marquee-scroll var(--scroll-duration, 10s) linear infinite;
+}
+@keyframes marquee-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+.platform { /* Eigenschaften für die Zelle in der Spalte Gleis */
+    font-size: 26px;
+    font-weight: bold;
+    text-align: center;
+}
+.tripMessage { /* Eigenschaften für die Abweichungsmeldungen in der Spalte Über */
+    color: #FFFF00;
+    font-size: 17px;
+}
+.column_to_from { /* Eigenschaften für die Spalte Von / Nach */
+    width: 45%;
+}
+.column_track { /* Eigenschaften für die Spalte Gleis */
+    width: 70px;
+    text-align: right;
+    padding-right: 60px !important;
+}
+#additionalTextContainer { /* Eigenschaften für die Hinweismeldung und Großstörungsmeldung */
+    background-color: #FFFFFF;
+    bottom: 0;
+    overflow: hidden;
+	position: fixed;
+    width: 100%;
+    display: none; /* Hidden for now */
+}
+.additionalText { /* Eigenschaften für die Hinweismeldung und Großstörungsmeldung */
+    border-top: 1px solid #000080;
+    color: #000080;
+    font-size: 32px;
+    padding-top: 3px;
+    text-align: left;
+    width: 100%;
+    height: 40px;
+}
+#errorText {  /* Eigenschaften für den kleinen Fehlertext */
+    background-color: #FFFFFF;
+    bottom: 0;
+    font-size: 18px;
+    position: fixed;
+    right: 0;
+}
+.path, .to_from, .tripMessage, .platform, .additionalText {
+    display: block;
+    overflow: hidden;
+    position: relative;
+    white-space: nowrap;
+}
+
+.column_wing_symbol {
+    width: 25px;
+}
+
+.wingPicture {
+    max-height: 40px;
+    max-width: 20px;
+}
+
+.impressumLink {
+   color: #FFFFFF;
+   font-size: 20px;
+   vertical-align: top;
+}
