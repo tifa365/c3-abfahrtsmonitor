@@ -1,4 +1,4 @@
-# 39C3 Abfahrtsmonitor
+# C3 Abfahrtsmonitor
 
 CCC Congress live schedule displayed in the classic German train station departure display style.
 
