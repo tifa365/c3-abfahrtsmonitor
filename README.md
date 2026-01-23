@@ -1,6 +1,6 @@
 # 39C3 Bahnhofstafel
 
-CCC Congress schedule displayed in the classic German train station departure board style (Bahnhofstafel).
+CCC Congress live schedule displayed in the classic German train station departure display style.
 
 <img width="1878" height="885" alt="CleanShot 2026-01-23 at 20 24 22" src="https://github.com/user-attachments/assets/d6817c31-4fa0-4441-a750-fe65889d8e28" />
 
