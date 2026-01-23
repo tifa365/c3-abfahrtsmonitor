@@ -2,8 +2,7 @@
 
 CCC Congress schedule displayed in the classic German train station departure board style (Bahnhofstafel).
 
-<img width="1896" height="955" alt="CleanShot 2026-01-23 at 20 21 47" src="https://github.com/user-attachments/assets/e1ff2692-ce57-436e-b1b1-fbee335a8b19" />
-
+<img width="1878" height="885" alt="CleanShot 2026-01-23 at 20 24 22" src="https://github.com/user-attachments/assets/d6817c31-4fa0-4441-a750-fe65889d8e28" />
 
 ## Usage
 
